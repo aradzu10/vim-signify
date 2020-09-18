@@ -16,6 +16,7 @@ command! -nargs=0 -bar -bang SignifyFold            call sy#fold#dispatch(<bang>
 command! -nargs=0 -bar -bang SignifyDiff            call sy#repo#diffmode(<bang>1)
 command! -nargs=0 -bar       SignifyHunkDiff        call sy#repo#diff_hunk()
 command! -nargs=0 -bar       SignifyHunkUndo        call sy#repo#undo_hunk()
+command! -nargs=0 -bar       SignifyHunkResDel      call sy#repo#hunk_restore_delete()
 command! -nargs=0 -bar       SignifyRefresh         call sy#util#refresh_windows()
 
 command! -nargs=0 -bar       SignifyEnable          call sy#start()

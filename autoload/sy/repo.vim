@@ -444,6 +444,48 @@ function! s:undo_hunk(sy, vcs, diff) abort
   return sy#start()
 endfunction
 
+" #insert_hunk {{{1
+function! sy#repo#hunk_restore_delete() abort
+  let bufnr = bufnr('')
+  let sy = getbufvar(bufnr, 'sy')
+  if !empty(sy) && !empty(sy.updated_by)
+    call sy#repo#get_diff(bufnr, sy.updated_by, function('s:hunk_restore_delete'))
+  endif
+endfunction
+
+function! s:hunk_restore_delete(sy, vcs, diff) abort
+  call sy#verbose('s:hunk_restore_delete()', a:vcs)
+
+  let [header, hunk] = s:extract_current_hunk(a:diff)
+  if empty(hunk)
+    return
+  endif
+
+  let [_old_line, _old_count, new_line, _new_count] = sy#sign#parse_hunk(header)
+
+  for line in hunk
+    let op = line[0]
+    let text = line[1:]
+    if op == ' ' || op == '+'
+      if text != getline(new_line)
+        let chunk = op == ' ' ? 'context' : 'addition'
+        echoerr 'Could not apply '.chunk.' hunk for undo. Try saving the buffer first.'
+        return
+      endif
+    elseif op == '-'
+      call append(new_line-1, text)
+    else
+      echoer 'Unknown diff operation ' . line
+      return
+    endif
+    let new_line += 1
+  endfor
+
+  " Undoing altered the buffer, so update signs.
+  call setbufvar(a:sy.buffer, 'sy_job_id_'.a:vcs, 0)
+  return sy#start()
+endfunction
+
 " s:initialize_job {{{1
 function! s:initialize_job(bufnr, vcs) abort
   return s:wrap_cmd(a:bufnr, a:vcs, s:get_base_cmd(a:bufnr, a:vcs, g:signify_vcs_cmds))
